@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import sklearn
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
@@ -9,7 +10,6 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import StratifiedKFold
 
 from sklearn.linear_model import PoissonRegressor
 from sklearn.ensemble import GradientBoostingRegressor
@@ -62,6 +62,7 @@ class Sales(object):
     def get_data_and_target_for(self, label):
 
         data = self.get_seasonal_data() if label == "seasonal" else self.get_monthly_data()
+        print(data.describe())
         target = data['order']
         data.drop(['order', ], axis=1, inplace=True)
         return (data, target)
@@ -114,6 +115,19 @@ class Sales(object):
             data, target, test_size=test_size, random_state=self.SEED
         )
 
+    def make_4d_plot_of_data(self, data, target):
+        data.replace({"A": 1, "B": 2, "C": 3}, inplace=True)
+        x = data["month"]
+        y = data["customer"]
+        z = data["item"]
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        img = ax.scatter(x, y, z, c=target, cmap=plt.hot())
+        fig.colorbar(img)
+        plt.savefig("images/data_4d.png")
+
+
     def write_to_csv(self, orders):
         header = "id,order\n"
         with open(self.OUTPUT_FILENAME, "w+") as f:
@@ -136,13 +150,14 @@ class Sales(object):
             max_depth=6,
             min_samples_split=5,
             subsample=0.5,
+            learning_rate=0.1,
         )
 
         gbr_params = {
             'clf__learning_rate': [0.05, 0.1],
         }
 
-        param_grid.update(gbr_params)
+        # param_grid.update(gbr_params)
 
         rfr = RandomForestRegressor(
             random_state=self.SEED,
@@ -183,8 +198,7 @@ class Sales(object):
 
         # param_grid.update(poisson_params)
 
-        lin_reg = LinearRegression()
-
+        voting = VotingRegressor(estimators=[("mlp", mlp), ("poisson", poisson), ("gbr", gbr)], weights= [2, 5, 2])
 
         pipe = Pipeline([
             ('one_hot', one_hot),
@@ -205,19 +219,21 @@ class Sales(object):
 
 sales = Sales()
 
-# sales.split_to_test_train_for('monthly', 0.2)
-# X_train, y_train = sales.get_train_data()
-# X_test, y_test = sales.get_test_data()
+sales.split_to_test_train_for('monthly', 0.2)
+X_train, y_train = sales.get_train_data()
+X_test, y_test = sales.get_test_data()
 
-data, target = sales.get_data_and_target_for("monthly")
-test_input = sales.get_test_input()
+# data, target = sales.get_data_and_target_for("monthly")
+# sales.make_4d_plot_of_data(data, target)
+# test_input = sales.get_test_input()
+
 
 model = sales.get_model()
-model.fit(data, target)
-calc_target = model.predict(test_input)
-sales.write_to_csv(calc_target)
+model.fit(X_train, y_train)
+calc_target = model.predict(X_test)
+# sales.write_to_csv(calc_target)
 
-# print("Score of model: ", model.score(X_test, y_test))
+print("Score of model: ", model.score(X_test, y_test))
 # print("Best params", model.best_params_)
-# print("RMSE is ", mean_squared_error(y_test, calc_target))
+print("RMSE is ", mean_squared_error(y_test, calc_target))
 

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Eczacıbaşı Karo Case Presentation</title>
+    <link href="favicon.png" rel="icon" type="image/png"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style type="text/css">
+        @import url(//fonts.googleapis.com/css?family=Droid+Serif);
+        @import url(//fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+        h1, h2, h3 {
+            font-family: 'Yanone Kaffeesatz';
+            font-weight: 400;
+            margin-bottom: 0;
+            margin-top: 10px;
+        }
+        h1 { font-size: 3.5em; }
+        h2 { font-size: 3em; }
+        h3 { font-size: 1.6em; }
+
+        body {
+            font-weight: 300;
+        }
+
+        .inverse {
+          background: #272822;
+          color: #777872;
+          text-shadow: 0 0 20px #333;
+        }
+        .inverse h1, .inverse h2 {
+          color: #f3f3f3;
+          line-height: 0.8em;
+        }
+        pre {
+          border-left: 0.4em solid #d7d7d7;
+          padding: 1em !important;
+        }
+        code {
+          background: transparent !important;
+        }
+        table {
+            margin-top: 12px;
+            margin-left: auto;
+            margin-right: auto;
+            table-layout: fixed;
+            width: 100%;
+            border-collapse: collapse;
+            border: 3px solid purple;
+        }
+        th, td {
+            padding: 8px;
+        }
+        thead th, tfoot th {
+            font-family: 'Droid Serif';
+        }
+        th {
+          letter-spacing: 2px;
+        }
+
+        td {
+          letter-spacing: 1px;
+        }
+
+        tbody td {
+          text-align: center;
+        }
+        tbody tr:nth-child(odd) {
+          background-color: #ff33cc;
+        }
+
+        tbody tr:nth-child(even) {
+          background-color: #e495e4;
+        }
+
+        a {
+          color: #F92672;
+          text-decoration: none;
+        }
+        .image img{
+            width: 100%;
+            height: auto;
+        }
+        .big-image img{
+            width: 80%;
+            height: auto;
+        }
+        .small-large-left img {
+            float:left;
+            width: 30%;
+            height: auto;
+        }
+
+        .small-large-right img {
+            float: right;
+            width: 60%;
+            height: auto;
+        }
+        .task {
+          float: right;
+          font-size: 0.9em;
+          padding-top: 0.6em;
+        }
+        .task a {
+          color: #080;
+          text-decoration: none;
+        }
+        .right {
+          float: right;
+          margin-left: 1em;
+        }
+        .pushdown {
+          margin-top: 12em;
+        }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle, inverse
+
+# Eczacıbaşı Karo Talep Tahmini
+### by [Ali Kalaycı](https://www.linkedin.com/in/kalayciali/) from [İYTE CHE](https://che.iyte.edu.tr/en/home-page/)
+
+---
+class: center 
+
+# Relook to Case Given
+
+.image[![Case Definition](./images/case_definition.png)]
+
+---
+class: center, middle, inverse
+
+# Data Cleaning
+
+---
+template: default
+layout: true
+
+### Data Cleaning
+
+---
+
+# Summed Data 
+
+
+   |        | month |  customer  |  item  |  order |
+   | ----  |:-----: | :----:|:----:| :----: |
+    |0         |1       | A     |0   |216.00 |
+    |1         |1       | A     |1  | 360.00 |
+    |2        | 1       | A    | 2  |1312.00 |
+    |3         |1       | A    | 3  |3240.00 |
+    |4         |1       | A    | 4   |734.40 |
+    |...     |...      |...   |...   |   ... |
+    |2377     | 7       | C    |64   |648.00 |
+    |2378     | 7       | C   | 65  |1296.00 |
+    |2379     | 7       | C   | 66  |1440.00 |
+    |2380     | 7       | C    |67  |1198.08 |
+    |2381      |7       | C   | 80  | 110.76 |
+
+
+---
+template: default
+layout: true
+
+### Data Cleaning
+
+---
+
+# Data Description
+
+   |         | month        |  item        |  order |
+   | ----  |:-----: | :----:|:----:| 
+| count  | 2382.000  | 2382.000   | 2382.000 |
+| mean      | 5.933   |  40.218   | 1931.130 |
+| std       | 3.352    | 23.667   | 2215.842 |
+| min       | 1.000    |  0.000      | 1.000 |
+| 25%       | 3.000    | 20.000    | 475.200 |
+| 50%       | 6.000    | 40.000   | 1218.360 |
+| 75%       | 9.000    | 60.000   | 2635.200 |
+| max      | 12.000    | 82.000  | 23148.840 |
+
+
+---
+template: default
+layout: true
+
+### Data Cleaning
+
+---
+
+# Data in 4d
+
+.big-image[![data](./images/data_4d.png)]
+
+---
+class: center, middle, inverse
+
+# Feature Engineering
+
+
+---
+template: default
+layout: true
+
+### Feature Engineering
+
+---
+
+# Categorical One Hot Features
+
+.image[![one hot](./images/one_hot_encoding.png)]
+
+- One hot encoding makes futures understandable by machine.
+
+---
+class: center, middle, inverse
+
+# Methods to Consider
+
+---
+template: default
+layout: true
+
+### Methods to Consider
+
+---
+
+# Methods for Regression
+
+- Linear Regression Models
+
+- Kernel Methods
+
+- Gradient Boosting Decision Trees
+
+- Neural Networks
+
+---
+template: default
+layout: true
+
+### Methods to Consider
+
+---
+
+# Poisson Distribution
+
+- Poisson distribution is a discrete distribution.
+
+- It computes the probability of a given number of events occurring in a fixed time interval, 
+
+- If these events occur with a known rate and and independently of each other
+
+.small-large-left[![Poisson Formula](./images/poisson_formula.png)]
+
+.small-large-right[![Poisson Graph](./images/poisson_graph.png)]
+
+
+---
+template: default
+layout: true
+
+### Methods to Consider
+
+---
+
+# Poisson Regression
+
+- Poisson regression is extended linear regression with exponential activation function.
+
+- The variance of a Poisson distribution increases with the mean.
+
+
+   |  Name    | Activation  |  Distribution |  Loss | 
+   | ----  | ----- | ---- | ---- | 
+   |  Poisson Regression | exp(y) |  Poisson |  NLL | 
+
+
+- sklearn.linear_model.PoissonRegressor(alpha=0.2) 
+
+.center[
+Score of model:  0.5968702400590131
+
+RMSE is  2240394.4616808384]
+
+
+
+---
+class: center, middle, inverse
+
+# Any Comments or Questions?
+
+
+
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js">
+    </script>
+    <script type="text/javascript">
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
+
