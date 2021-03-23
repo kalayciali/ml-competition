@@ -17,6 +17,8 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
+from sklearn.decomposition import PCA
+from sklearn.svm import SVC
 
 def str2bool(v):
     if v.lower() == "true":
@@ -40,7 +42,7 @@ TRAIN_PATH = './train/'
 
 TEST_FNAME = 'tests.pkl'
 TRAIN_FNAME = 'trains.pkl'
-MODEL_FNAME = "model"
+MODEL_FNAME = "svc.pkl"
 
 SIGN_REGEX = r"NFI-(?P<person_id>\d\d\d)(?P<sig_id>\d\d).+"
 NUM_CLUSTERS = 79
@@ -144,27 +146,31 @@ total_df = train_df.append(test_df)
 
 X_train, X_test, y_train, y_test = train_test_split(total_df[get_pixels], total_df["person_id"], test_size=0.1, random_state=args.seed)
 
+pca = PCA(n_components=32, random_state=args.seed)
+
+X_train_pca = pca.fit_transform(X_train)
+X_test_pca = pca.transform(X_test)
+
 
 if args.predict:
 
     print(f'Training on {len(X_train)} images')
     if args.gen_model:
         print("With new model")
-        model = MLPClassifier(
-            hidden_layer_sizes=(300, ),
-            activation='logistic',
-            batch_size=50,
-            alpha=0.00005,
-            learning_rate='invscaling',
-            verbose=True,
-            max_iter=100,
-        )
+#        model = MLPClassifier(
+#            hidden_layer_sizes=(800, ),
+#            activation='logistic',
+#            batch_size=50,
+#            alpha=0.00005,
+#            learning_rate='invscaling',
+#            verbose=True,
+#            max_iter=100,
+#        )
 
         #model = GaussianMixture(n_components=NUM_CLUSTERS, random_state=args.seed)
-        model.fit(X_train, y_train)
-        print(model.score(X_test, y_test))
-        print(model.predict(X_test.iloc[[0]]))
-        print(y_test.iloc[0])
+        model = SVC(C=10, kernel='rbf', random_state=args.seed, probability=True)
+        model.fit(X_train_pca, y_train)
+        print(model.score(X_test_pca, y_test))
 
         with lzma.open(MODEL_FNAME, "wb") as model_file:
             pickle.dump(model, model_file)
@@ -173,10 +179,9 @@ if args.predict:
         print("With already built model")
         with lzma.open(MODEL_FNAME, "rb") as model_file:
             model = pickle.load(model_file)
+        print(model.predict_proba(X_test_pca))
 
-        print(model.score(X_train, y_train))
-        print(model.score(X_test, y_test))
-
-print('Datasets are loaded')
-print('Finished without model generation')
+else:
+    print('Datasets are loaded')
+    print('Finished without model generation')
 
