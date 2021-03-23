@@ -125,7 +125,8 @@ class Sales(object):
         ax = fig.add_subplot(111, projection='3d')
         img = ax.scatter(x, y, z, c=target, cmap=plt.hot())
         fig.colorbar(img)
-        plt.savefig("images/data_4d.png")
+        plt.show()
+        # plt.savefig("images/data_4d.png")
 
 
     def write_to_csv(self, orders):
@@ -219,21 +220,23 @@ class Sales(object):
 
 sales = Sales()
 
-sales.split_to_test_train_for('monthly', 0.2)
-X_train, y_train = sales.get_train_data()
-X_test, y_test = sales.get_test_data()
+# Methods for testing on train test split
+# sales.split_to_test_train_for('monthly', 0.2)
+# X_train, y_train = sales.get_train_data()
+# X_test, y_test = sales.get_test_data()
 
-# data, target = sales.get_data_and_target_for("monthly")
-# sales.make_4d_plot_of_data(data, target)
-# test_input = sales.get_test_input()
-
+# testing without splitting
+data, target = sales.get_data_and_target_for("monthly")
+sales.make_4d_plot_of_data(data, target)
+test_input = sales.get_test_input()
 
 model = sales.get_model()
-model.fit(X_train, y_train)
-calc_target = model.predict(X_test)
-# sales.write_to_csv(calc_target)
+model.fit(data, target)
+calc_target = model.predict(test_input)
+sales.write_to_csv(calc_target)
 
-print("Score of model: ", model.score(X_test, y_test))
+# scoring for train test split
+# print("Score of model: ", model.score(X_test, y_test))
 # print("Best params", model.best_params_)
-print("RMSE is ", mean_squared_error(y_test, calc_target))
+# print("RMSE is ", mean_squared_error(y_test, calc_target))
 
