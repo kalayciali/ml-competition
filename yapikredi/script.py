@@ -4,19 +4,18 @@ import numpy as np
 import argparse
 import matplotlib.pyplot as plt
 import io
+from csv import reader
 import re
 import lzma
 import pickle
 from dataclasses import make_dataclass
 import pandas as pd
 from itertools import chain
-from concurrent import futures
+from scipy.spatial import distance
 
 from scipy import ndimage
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.cluster import KMeans
-from sklearn.mixture import GaussianMixture
 from sklearn.decomposition import PCA
 from sklearn.svm import SVC
 
@@ -29,6 +28,7 @@ def str2bool(v):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gen_model", default=False, type=str2bool, help="Run prediction on given data")
+parser.add_argument("--write_res", default=False, type=str2bool, help="Write result as csv format")
 parser.add_argument("--predict", default=True, type=str2bool, help="Predict model")
 parser.add_argument("--gen_dataset", default=True, type=str2bool, help="Generate image dataset")
 parser.add_argument("--pixel_size", default=60, type=int, help="size X size image")
@@ -42,7 +42,10 @@ TRAIN_PATH = './train/'
 
 TEST_FNAME = 'tests.pkl'
 TRAIN_FNAME = 'trains.pkl'
-MODEL_FNAME = "svc.pkl"
+MODEL_FNAME = "nn_model.pkl"
+PCA_FNAME = "pca.pkl"
+OUTPUT_FILENAME = "ali_kalayci_yapikredi.csv"
+ID_INFO = "idinfo.csv"
 
 SIGN_REGEX = r"NFI-(?P<person_id>\d\d\d)(?P<sig_id>\d\d).+"
 NUM_CLUSTERS = 79
@@ -84,6 +87,49 @@ def expand_img(img, metadata,
 
     return gen_imgs
 
+def clean_row(row):
+    id = row[0]
+
+    if len(row[1]) == 2:
+        person1 = "0" + row[1]
+    else:
+        person1 = row[1]
+
+    if len(row[2]) == 1:
+        sign1 = "0" + row[2]
+    else:
+        sign1 = row[2]
+
+    if len(row[3]) == 2:
+        person2 = "0" + row[3]
+    else:
+        person2 = row[3]
+
+    if len(row[4]) == 1:
+        sign2 = "0" + row[4]
+    else:
+        sign2 = row[4]
+
+    return (id, person1, sign1, person2, sign2)
+
+def calc_predictions_on(input_fname, test_df, predictions):
+
+    with open(input_fname, 'r') as id_file:
+        id_reader= reader(id_file)
+        next(id_reader)
+        header = "id,score\n"
+        with open(OUTPUT_FILENAME, "w+") as out_file:
+            out_file.write(header)
+            for row in id_reader:
+                id, person1, sign1, person2, sign2 = clean_row(row)
+                cond1 = (test_df["person_id"] == person1) & (test_df["sign_id"] == sign1)
+                index1 = test_df[cond1].index.values[0]
+
+                cond2 = (test_df["person_id"] == person2) & (test_df["sign_id"] == sign2)
+                index2 = test_df[cond2].index.values[0]
+
+                score = 1 - distance.jensenshannon(predictions[index1], predictions[index2])
+                out_file.write(f"{id},{score:.8f}\n")
 
 def bbox(img):
     # border box
@@ -130,58 +176,92 @@ def generate_img_dataset(path, extend):
 if args.gen_dataset:
     print("Generating dataset from stratch")
 
-    train_df = generate_img_dataset(TRAIN_PATH, True)
+    train_df = generate_img_dataset(TRAIN_PATH, False)
     print("pickling train data")
     train_df.to_pickle(TRAIN_FNAME)
 
-    test_df = generate_img_dataset(TEST_PATH, True)
+    test_df = generate_img_dataset(TEST_PATH, False)
     print("pickling test data")
     test_df.to_pickle(TEST_FNAME)
-else:
-    print("Using already built dataset")
-    train_df = pd.read_pickle(TRAIN_FNAME)
-    test_df = pd.read_pickle(TEST_FNAME)
 
-total_df = train_df.append(test_df)
 
-X_train, X_test, y_train, y_test = train_test_split(total_df[get_pixels], total_df["person_id"], test_size=0.1, random_state=args.seed)
-
-pca = PCA(n_components=32, random_state=args.seed)
-
-X_train_pca = pca.fit_transform(X_train)
-X_test_pca = pca.transform(X_test)
-
+split = False
+print("Using already built dataset")
 
 if args.predict:
 
-    print(f'Training on {len(X_train)} images')
     if args.gen_model:
-        print("With new model")
-#        model = MLPClassifier(
-#            hidden_layer_sizes=(800, ),
-#            activation='logistic',
-#            batch_size=50,
-#            alpha=0.00005,
-#            learning_rate='invscaling',
-#            verbose=True,
-#            max_iter=100,
-#        )
 
-        #model = GaussianMixture(n_components=NUM_CLUSTERS, random_state=args.seed)
-        model = SVC(C=10, kernel='rbf', random_state=args.seed, probability=True)
+        print("with splitting ", split)
+
+        train_df = pd.read_pickle(TRAIN_FNAME)
+        test_df = pd.read_pickle(TEST_FNAME)
+
+        total_df = train_df.append(test_df)
+
+        if split:
+            X_train, X_test, y_train, y_test = train_test_split(total_df[get_pixels], total_df["person_id"], test_size=0.1, random_state=args.seed)
+        else:
+            X_train, y_train = total_df[get_pixels], total_df["person_id"]
+
+        pca = PCA(n_components=50, random_state=args.seed)
+
+        X_train_pca = pca.fit_transform(X_train)
+
+        if split:
+            X_test_pca = pca.transform(X_test)
+
+        print(f'Training on {len(X_train)} images')
+
+        print("With new model")
+
+        model = MLPClassifier(
+            hidden_layer_sizes=(800, ),
+            activation='logistic',
+            batch_size=50,
+            alpha=0.00005,
+            learning_rate='invscaling',
+            verbose=True,
+            max_iter=200,
+            tol=0.00000001,
+        )
+
+        # model = SVC(C=10, kernel='rbf', random_state=args.seed, probability=True)
         model.fit(X_train_pca, y_train)
-        print(model.score(X_test_pca, y_test))
+
+        if split:
+            print(model.score(X_test_pca, y_test))
 
         with lzma.open(MODEL_FNAME, "wb") as model_file:
             pickle.dump(model, model_file)
 
+        with lzma.open(PCA_FNAME, "wb") as pca_file:
+            pickle.dump(pca, pca_file)
+
     else:
         print("With already built model")
+
         with lzma.open(MODEL_FNAME, "rb") as model_file:
             model = pickle.load(model_file)
-        print(model.predict_proba(X_test_pca))
+
+        with lzma.open(PCA_FNAME, "rb") as pca_file:
+            pca = pickle.load(pca_file)
+
+        test_df = generate_img_dataset(TEST_PATH, False)
+        print(test_df.describe)
+
+        X_test_pca = pca.transform(test_df[get_pixels])
+        y_test = test_df["person_id"]
+
+        print("Score of model: ", model.score(X_test_pca, y_test))
+        predictions = model.predict_proba(X_test_pca)
+
+        calc_predictions_on(ID_INFO, test_df, predictions)
 
 else:
     print('Datasets are loaded')
     print('Finished without model generation')
+
+
+
 

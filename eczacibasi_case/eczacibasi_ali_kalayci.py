@@ -7,16 +7,10 @@ from mpl_toolkits.mplot3d import Axes3D
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
-from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
 
 from sklearn.linear_model import PoissonRegressor
-from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import VotingRegressor
-from sklearn.neural_network import MLPRegressor
 
 class Sales(object):
 
@@ -140,53 +134,9 @@ class Sales(object):
     def get_model(self):
 
         one_hot = OneHotEncoder(handle_unknown="ignore", sparse=True)
-        poly = PolynomialFeatures(2)
 
         param_grid = {
         }
-
-        gbr = GradientBoostingRegressor(
-            n_estimators=1000,
-            random_state=self.SEED,
-            max_depth=6,
-            min_samples_split=5,
-            subsample=0.5,
-            learning_rate=0.1,
-        )
-
-        gbr_params = {
-            'clf__learning_rate': [0.05, 0.1],
-        }
-
-        # param_grid.update(gbr_params)
-
-        rfr = RandomForestRegressor(
-            random_state=self.SEED,
-            n_estimators=1000,
-            min_samples_split=5,
-            n_jobs=-1,
-        )
-
-        rfr_params = {
-            'clf__max_depth': [4, 6]
-        }
-
-        # param_grid.update(rfr_params)
-
-        mlp = MLPRegressor(
-            random_state=self.SEED,
-            hidden_layer_sizes=(1000, ),
-            max_iter=500,
-            learning_rate='invscaling',
-            solver='sgd',
-            alpha=0.1,
-        )
-
-        mlp_params = {
-            'clf__alpha': [0.05, 0.1]
-        }
-
-        # param_grid.update(mlp_params)
 
         poisson = PoissonRegressor(
             max_iter=1000,
@@ -198,8 +148,6 @@ class Sales(object):
         }
 
         # param_grid.update(poisson_params)
-
-        voting = VotingRegressor(estimators=[("mlp", mlp), ("poisson", poisson), ("gbr", gbr)], weights= [2, 5, 2])
 
         pipe = Pipeline([
             ('one_hot', one_hot),
